@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prompt Builder</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script type="text/babel">
+    const { useState } = React;
+
+    const examples = {
+      task: "Write an email to my team announcing a new project management tool we're adopting.",
+      context: "We're switching from Trello to Asana. The team has been frustrated with Trello's limitations. Rollout starts next Monday.",
+      audience: "My team of 12 marketers, mixed tech comfort levels",
+      tone: "Friendly, encouraging, not corporate-speak",
+      outputFormat: "Under 200 words, short paragraphs",
+      mustInclude: "Why we're switching\nWhen it starts\nWhere to find training resources",
+      avoid: "Making it sound like extra work for them",
+      example: "Similar to how our CEO announced the new benefits package last month - direct, clear, with a positive spin."
+    };
+
+    function FieldWithExample({ label, hint, example, children }) {
+      const [showExample, setShowExample] = useState(false);
+
+      return (
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <label className="block text-sm font-medium text-gray-700">
+              {label} <span className="text-gray-400 font-normal">{hint}</span>
+            </label>
+            <button
+              type="button"
+              onClick={() => setShowExample(!showExample)}
+              className="text-xs text-blue-500 hover:text-blue-700 hover:underline"
+            >
+              {showExample ? 'hide example' : 'example'}
+            </button>
+          </div>
+          {showExample && (
+            <div className="mb-2 px-3 py-2 bg-blue-50 border border-blue-100 rounded text-xs text-blue-700 italic whitespace-pre-wrap">
+              {example}
+            </div>
+          )}
+          {children}
+        </div>
+      );
+    }
+
+    function PromptBuilder() {
+      const [formData, setFormData] = useState({
+        task: '',
+        context: '',
+        audience: '',
+        tone: '',
+        outputFormat: '',
+        mustInclude: '',
+        avoid: '',
+        example: ''
+      });
+      
+      const [copied, setCopied] = useState(false);
+
+      const handleChange = (field, value) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+      };
+
+      const generatePrompt = () => {
+        let prompt = '';
+        
+        if (formData.task) {
+          prompt += `**Task:** ${formData.task}\n\n`;
+        }
+        if (formData.context) {
+          prompt += `**Context:** ${formData.context}\n\n`;
+        }
+        if (formData.audience) {
+          prompt += `**Audience:** ${formData.audience}\n\n`;
+        }
+        if (formData.tone) {
+          prompt += `**Tone:** ${formData.tone}\n\n`;
+        }
+        if (formData.outputFormat) {
+          prompt += `**Output format:** ${formData.outputFormat}\n\n`;
+        }
+        if (formData.mustInclude) {
+          const items = formData.mustInclude.split('\n').filter(item => item.trim());
+          if (items.length > 0) {
+            prompt += `**Must include:**\n${items.map(item => `- ${item.trim()}`).join('\n')}\n\n`;
+          }
+        }
+        if (formData.avoid) {
+          prompt += `**Avoid:** ${formData.avoid}\n\n`;
+        }
+        if (formData.example) {
+          prompt += `**Example of what I'm looking for:** ${formData.example}`;
+        }
+        
+        return prompt.trim();
+      };
+
+      const copyToClipboard = () => {
+        navigator.clipboard.writeText(generatePrompt());
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      };
+
+      const clearAll = () => {
+        setFormData({
+          task: '',
+          context: '',
+          audience: '',
+          tone: '',
+          outputFormat: '',
+          mustInclude: '',
+          avoid: '',
+          example: ''
+        });
+      };
+
+      const generatedPrompt = generatePrompt();
+
+      return (
+        <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+          <div className="max-w-5xl mx-auto">
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold text-gray-800 mb-1">Prompt Builder</h1>
+              <p className="text-gray-500 text-sm">Fill in the fields, copy your formatted prompt. Click "example" on any field if you need inspiration.</p>
+            </div>
+            
+            <div className="flex flex-col md:flex-row gap-6">
+              {/* Input Section */}
+              <div className="flex-1 space-y-4">
+                <FieldWithExample
+                  label="Task"
+                  hint="- What you need done"
+                  example={examples.task}
+                >
+                  <textarea
+                    className="w-full p-3 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    rows={2}
+                    placeholder="e.g., Write an email announcing our new policy"
+                    value={formData.task}
+                    onChange={(e) => handleChange('task', e.target.value)}
+                  />
+                </FieldWithExample>
+
+                <FieldWithExample
+                  label="Context"
+                  hint="- Background info / why you need this"
+                  example={examples.context}
+                >
+                  <textarea
+                    className="w-full p-3 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    rows={2}
+                    placeholder="e.g., We're updating our remote work policy starting next month"
+                    value={formData.context}
+                    onChange={(e) => handleChange('context', e.target.value)}
+                  />
+                </FieldWithExample>
+
+                <FieldWithExample
+                  label="Audience"
+                  hint="- Who will read/use this"
+                  example={examples.audience}
+                >
+                  <input
+                    type="text"
+                    className="w-full p-3 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="e.g., All employees, mixed departments"
+                    value={formData.audience}
+                    onChange={(e) => handleChange('audience', e.target.value)}
+                  />
+                </FieldWithExample>
+
+                <FieldWithExample
+                  label="Tone"
+                  hint="- How it should sound"
+                  example={examples.tone}
+                >
+                  <input
+                    type="text"
+                    className="w-full p-3 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="e.g., Professional but warm, casual, formal"
+                    value={formData.tone}
+                    onChange={(e) => handleChange('tone', e.target.value)}
+                  />
+                </FieldWithExample>
+
+                <FieldWithExample
+                  label="Output format"
+                  hint="- Structure / length"
+                  example={examples.outputFormat}
+                >
+                  <input
+                    type="text"
+                    className="w-full p-3 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="e.g., 200 words max, bullet points, table format"
+                    value={formData.outputFormat}
+                    onChange={(e) => handleChange('outputFormat', e.target.value)}
+                  />
+                </FieldWithExample>
+
+                <FieldWithExample
+                  label="Must include"
+                  hint="- One item per line"
+                  example={examples.mustInclude}
+                >
+                  <textarea
+                    className="w-full p-3 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    rows={3}
+                    placeholder={"Key dates\nAction items for the team\nWhere to ask questions"}
+                    value={formData.mustInclude}
+                    onChange={(e) => handleChange('mustInclude', e.target.value)}
+                  />
+                </FieldWithExample>
+
+                <FieldWithExample
+                  label="Avoid"
+                  hint="- What you don't want"
+                  example={examples.avoid}
+                >
+                  <input
+                    type="text"
+                    className="w-full p-3 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="e.g., Jargon, sounding too corporate, being too long"
+                    value={formData.avoid}
+                    onChange={(e) => handleChange('avoid', e.target.value)}
+                  />
+                </FieldWithExample>
+
+                <FieldWithExample
+                  label="Example"
+                  hint="- Optional reference"
+                  example={examples.example}
+                >
+                  <textarea
+                    className="w-full p-3 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    rows={2}
+                    placeholder="Paste a sample or describe the style you want"
+                    value={formData.example}
+                    onChange={(e) => handleChange('example', e.target.value)}
+                  />
+                </FieldWithExample>
+              </div>
+
+              {/* Output Section */}
+              <div className="md:w-80 lg:w-96 flex-shrink-0">
+                <div className="md:sticky md:top-8">
+                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden flex flex-col" style={{ maxHeight: 'calc(100vh - 4rem)' }}>
+                    <div className="flex items-center justify-between p-3 border-b border-gray-100 bg-gray-50 flex-shrink-0">
+                      <span className="text-sm font-medium text-gray-700">Your Prompt</span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={clearAll}
+                          className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                        >
+                          Clear all
+                        </button>
+                        <button
+                          onClick={copyToClipboard}
+                          disabled={!generatedPrompt}
+                          className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                            generatedPrompt 
+                              ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          }`}
+                        >
+                          {copied ? '✓ Copied!' : 'Copy'}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="p-4 overflow-y-auto flex-1">
+                      {generatedPrompt ? (
+                        <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed">
+                          {generatedPrompt}
+                        </pre>
+                      ) : (
+                        <p className="text-sm text-gray-400 italic">
+                          Start filling in the fields to generate your prompt...
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <p className="text-xs text-gray-400 mt-3 text-center">
+                    Tip: You don't need to fill every field. Use what's relevant.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<PromptBuilder />);
+  </script>
+</body>
+</html>
